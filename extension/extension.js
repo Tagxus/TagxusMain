@@ -10,11 +10,15 @@ if (document.body) {
   });
 }
 
+//todo: better way to locate the element
 function getXPath(element){
     var xpath = '';
     for ( ; element && element.nodeType == 1; element = element.parentNode ){
         var id = $(element.parentNode).children(element.tagName).index(element) + 1;
         id > 1 ? (id = '[' + id + ']') : (id = '');
+        if(element.id){
+          return '//*[@id="'+element.id+'"]'+xpath;
+        }
         xpath = '/' + element.tagName.toLowerCase() + id + xpath;
     }
     return xpath;
@@ -24,7 +28,7 @@ function _x(STR_XPATH) {
     var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
     var xnodes = [];
     var xres;
-    while (xres = xresult.iterateNext()) {
+    if (xres = xresult.iterateNext()) {
         xnodes.push(xres);
     }
 
@@ -35,20 +39,31 @@ chrome.extension.onMessage.addListener(function (message, sender, callback) {
    console.log(message);
    var xpath = getXPath(rightclicked_item);
    console.log(xpath);
-   var tag = $('<span class="tag">'+ message.selectionText +'</span>');
   
-   $(_x(xpath)).first().after(tag);
+ $.ajax({
+        type: 'POST',
+        data: {name:message.selectionText, uri:rightclicked_item.baseURI, xpath:xpath},
+        url: 'http://localhost:8080/TagxusWS/tagws/tags'
+    }).done(function (response) {
+       var tag = $('<span class="tag">'+ message.selectionText +'</span>');
+       $(_x(xpath)).after(tag);
+    }).fail(function() {
+        alert( "error" );
+  });
+
 });
 
 $(document).ready(function () {
     $.ajax({
         type: 'GET',
         dataType: "json",
-        url: 'http://localhost:8080/TagxusWS/tagws/tags/30'
+        url: 'http://localhost:8080/TagxusWS/tagws/tags?uri=' + document.baseURI
     }).done(function (response) {
-        console.log(response);
-        var tag = $('<span class="tag">'+ response.name +'</span>');
-        $(_x(response.xpath)).first().after(tag);
+        $.each(response, function( key, value ) {
+          console.log(value);
+          var tag = $('<span class="tag">' + value.name + '</span>');
+          $(_x(value.xpath)).first().after(tag);
+        });
     }).fail(function() {
         alert( "error" );
   });
