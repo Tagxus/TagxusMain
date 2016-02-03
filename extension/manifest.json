@@ -10,7 +10,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://*.ggboom.com/*"],
+      "matches": ["*://*/*"],
       "css": ["extension.css"],
 	  "all_frames": true,
 	  "run_at": "document_end",

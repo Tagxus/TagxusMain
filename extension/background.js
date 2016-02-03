@@ -1,3 +1,4 @@
+
 // A generic onclick callback function.
 function genericOnClick(info, tab) {
 	console.log("item " + info.menuItemId + " was clicked");

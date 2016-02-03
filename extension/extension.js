@@ -40,12 +40,13 @@ chrome.extension.onMessage.addListener(function (message, sender, callback) {
    var xpath = getXPath(rightclicked_item);
    console.log(xpath);
   
- $.ajax({
+  $.ajax({
         type: 'POST',
-        data: {name:message.selectionText, uri:rightclicked_item.baseURI, xpath:xpath},
-        url: 'http://localhost:8080/TagxusWS/tagws/tags'
+        data: {name:message.selectionText, uri:trimUri(rightclicked_item.baseURI), xpath:xpath},
+        url: 'http://localhost:8080/TagxusWS/tags'
     }).done(function (response) {
-       var tag = $('<span class="tag">'+ message.selectionText +'</span>');
+       var tagId = jQuery.parseJSON(response).id;
+       var tag = $('<span class="tagxus" id="tagxus_'+tagId+'">' + message.selectionText +'</span>');
        $(_x(xpath)).after(tag);
     }).fail(function() {
         alert( "error" );
@@ -53,17 +54,33 @@ chrome.extension.onMessage.addListener(function (message, sender, callback) {
 
 });
 
+function trimUri(uri){
+  var i;
+  if((i=uri.lastIndexOf("#")) > 0)
+    uri = uri.substring(0,i);
+  return uri;
+}
+
+function gotoAnchor(uri){
+  var i;
+  if((i=uri.lastIndexOf("#")) > 0){
+    location.href = uri.substring(i);
+  }
+}
+
 $(document).ready(function () {
     $.ajax({
         type: 'GET',
         dataType: "json",
-        url: 'http://localhost:8080/TagxusWS/tagws/tags?uri=' + document.baseURI
+        url: 'http://localhost:8080/TagxusWS/tags?uri=' + encodeURIComponent(trimUri(document.baseURI))
     }).done(function (response) {
         $.each(response, function( key, value ) {
-          console.log(value);
-          var tag = $('<span class="tag">' + value.name + '</span>');
-          $(_x(value.xpath)).first().after(tag);
+          var tag = $('<span class="tagxus" id="tagxus_'+value.id+'">' + value.name + '</span>');
+          $(_x(value.xpath)).after(tag);
         });
+        
+        gotoAnchor(document.baseURI);
+        
     }).fail(function() {
         alert( "error" );
   });
